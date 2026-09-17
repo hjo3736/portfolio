@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import matter from 'gray-matter';
+
+export function parsePost(source, filename) {
+  const { data, content } = matter(source);
+  const slug = path.basename(filename, '.md');
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error(`${filename}: 파일명은 영문 소문자, 숫자, 하이픈을 사용하세요.`);
+  for (const field of ['title', 'date', 'description', 'category']) {
+    if (typeof data[field] !== 'string' || !data[field].trim()) throw new Error(`${filename}: ${field} 값을 문자열로 입력하세요.`);
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date) || Number.isNaN(Date.parse(data.date)) || new Date(data.date).toISOString().slice(0, 10) !== data.date) {
+    throw new Error(`${filename}: date는 실제 날짜 YYYY-MM-DD 형식이어야 합니다.`);
+  }
+  if (data.tags !== undefined && (!Array.isArray(data.tags) || data.tags.some(tag => typeof tag !== 'string'))) throw new Error(`${filename}: tags는 문자열 목록이어야 합니다.`);
+  if (data.draft !== undefined && typeof data.draft !== 'boolean') throw new Error(`${filename}: draft는 true 또는 false여야 합니다.`);
+  if (!content.trim()) throw new Error(`${filename}: 본문이 비어 있습니다.`);
+  return { slug, title: data.title.trim(), date: data.date, description: data.description.trim(), category: data.category.trim(), tags: data.tags || [], draft: data.draft === true, sample: data.sample === true, body: content.trim(), readingMinutes: Math.max(1, Math.ceil(content.length / 650)) };
+}
+
+export function loadPosts(directory) {
+  return fs.readdirSync(directory).filter(file => file.endsWith('.md')).map(file => parsePost(fs.readFileSync(path.join(directory, file), 'utf8'), file))
+    .filter(post => !post.draft).sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
+}
