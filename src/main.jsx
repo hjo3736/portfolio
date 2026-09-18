@@ -7,6 +7,7 @@ import { content } from './content';
 import { readRoute } from './navigation';
 import './styles.css';
 import './blog.css';
+import Comments from './Comments';
 
 const Polyhedron = lazy(() => import('./Polyhedron'));
 const Navigation = React.createContext(null);
@@ -86,6 +87,7 @@ function Post({ post }) {
   return <main className="article-page"><Link className="back-link" href="/blog">← 모든 글</Link>
     <article><div className="article-heading"><p className="eyebrow">{post.category} {post.sample && ' / 예시 글'}</p><h1>{post.title}</h1><p className="article-description">{post.description}</p><div className="article-meta"><time dateTime={post.date}>{post.date.replaceAll('-', '.')}</time><span>{post.readingMinutes}분 읽기</span>{post.tags.map(tag => <span key={tag}>#{tag}</span>)}</div></div>
     <div className="prose"><ReactMarkdown remarkPlugins={[remarkGfm]}>{post.body}</ReactMarkdown></div></article>
+    <Comments key={post.slug} slug={post.slug} />
     <section className="more-posts"><p className="eyebrow">계속 읽기</p>{related.map(item => <Link key={item.slug} href={`/blog/${item.slug}`}><span>{item.title}</span><span>↗</span></Link>)}<Link href="/blog"><span>글 목록으로</span><span>↗</span></Link></section>
   </main>;
 }
