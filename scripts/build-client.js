@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'esbuild';
 import { loadPosts } from './posts.js';
+import { content } from '../src/sections.js';
 
 const root = process.cwd(), output = path.resolve(root, 'dist');
 if (path.dirname(output) !== root || path.basename(output) !== 'dist') throw new Error('Unexpected build directory');
@@ -24,7 +25,7 @@ if (fs.existsSync('public')) fs.cpSync('public', output, { recursive: true });
 fs.writeFileSync(path.join(output, 'index.html'), html);
 fs.writeFileSync(path.join(output, '404.html'), html);
 const escape = value => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-const routes = [{ slug: 'blog', title: '블로그 — VERTEX', description: '개발 일지와 기술 지식, 배움의 기록.' }, ...posts.map(post => ({ ...post, slug: `blog/${post.slug}` }))];
+const routes = [...content.map(page => ({ slug: page.path.slice(1), title: page.name, description: page.copy })), ...posts.map(post => ({ ...post, slug: `blog/${post.slug}` }))];
 for (const route of routes) {
   const directory = path.join(output, route.slug); fs.mkdirSync(directory, { recursive: true });
   fs.writeFileSync(path.join(directory, 'index.html'), html.replace(/<title>.*?<\/title>/, `<title>${escape(route.title)} — VERTEX</title>`).replace(/<meta name="description" content="[^"]*"\s*\/>/, `<meta name="description" content="${escape(route.description)}" />`));

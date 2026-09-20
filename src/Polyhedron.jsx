@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { content } from './content';
+import { content } from './sections';
 import { canAutoRotate, IDLE_DELAY } from './motion';
 
 export default function Polyhedron({ front, onFront, onSelect, focusRequest, blocked }) {
@@ -151,13 +151,12 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
   };
   const active = content[front];
   return <section className="visual" aria-label="회전하는 포트폴리오 다면체">
-    <div className="visual-top"><span>EXPLORE THE CONNECTIONS</span><span>3D / INTERACTIVE</span></div>
     <div className="orbit" aria-hidden="true" />
     <div id="stage" ref={stageRef}>{failed && <p id="fallback">이 환경에서는 3D 화면을 표시할 수 없어요. 메뉴에서 모든 내용을 확인할 수 있습니다.</p>}</div>
     {!failed && <div id="nodes">{content.map((item, index) => <button key={item.en} ref={el => { nodeRefs.current[index] = el; }}
       className={`node ${front === index ? 'front' : ''}`} aria-label={`${item.name} 열기`} onClick={() => onSelect(index)}><span>{item.name}</span></button>)}</div>}
     <div id="preview"><span className="eyebrow">0{front + 1} / {active.en}</span>
       <button id="preview-open" onClick={() => onSelect(front)}>{active.title} ↗</button><p id="preview-copy">{active.copy}</p></div>
-    <div className="visual-bottom"><span>드래그 후 3초가 지나면 자동 회전</span>{!failed && <button id="motion" onClick={toggle} aria-pressed={paused}>{paused ? '▷ 회전 시작' : 'Ⅱ 회전 멈춤'}</button>}</div>
+    <div className="visual-bottom"><span>드래그하여 둘러보기</span>{!failed && <button id="motion" onClick={toggle} aria-pressed={paused}>{paused ? '▷ 회전 시작' : 'Ⅱ 회전 멈춤'}</button>}</div>
   </section>;
 }

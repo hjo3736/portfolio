@@ -40,6 +40,7 @@ test('초안은 배포 목록에서 제외하며 공개 글은 최신순으로 �
   }
 });
 test('블로그 주소와 직접 연결된 글 주소를 구분한다', () => {
+  for (const page of ['about', 'projects', 'toolkit', 'contact']) assert.deepEqual(readRoute(`/${page}/`), { page });
   assert.deepEqual(readRoute('/blog/'), { page: 'blog' });
   assert.deepEqual(readRoute('/blog/my-post/'), { page: 'post', slug: 'my-post' });
   assert.deepEqual(readRoute('/blog/a/b'), { page: 'missing' });

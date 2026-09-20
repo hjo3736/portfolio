@@ -3,11 +3,12 @@ import { createRoot } from 'react-dom/client';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import posts from 'virtual:posts';
-import { content } from './content';
+import { content } from './sections';
 import { readRoute } from './navigation';
 import './styles.css';
 import './blog.css';
 import Comments from './Comments';
+import './pages.css';
 
 const Polyhedron = lazy(() => import('./Polyhedron'));
 const Navigation = React.createContext(null);
@@ -21,30 +22,9 @@ function Link({ href, children, onClick, ...props }) {
   }}>{children}</a>;
 }
 
-function Detail({ index, onClose }) {
-  const ref = useRef(null);
-  const close = useRef(onClose); close.current = onClose;
-  useEffect(() => {
-    const previous = document.activeElement;
-    ref.current.showModal();
-    return () => previous?.focus();
-  }, []);
-  const item = content[index];
-  return <dialog ref={ref} aria-labelledby="detail-title" onClose={() => close.current()} onClick={event => {
-    if (event.target !== ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) ref.current.close();
-  }}><div className="dialog-head"><span className="eyebrow">0{index + 1} / {item.en}</span><button id="close" aria-label="상세 내용 닫기" onClick={() => ref.current.close()}>✕</button></div>
-    <h2 id="detail-title">{item.title}</h2><p className="sample">구성 확인을 위한 예시 콘텐츠입니다.</p>
-    {item.items.map(([title, description, ...tags]) => <article className="entry" key={title}><h3>{title}</h3><p>{description}</p>{tags.map(tag => <span className="tag" key={tag}>{tag}</span>)}</article>)}
-    <button id="back" onClick={() => ref.current.close()}>돌아가서 탐색하기 ↗</button>
-  </dialog>;
-}
-
 function Home() {
   const navigate = React.useContext(Navigation);
   const [front, setFront] = useState(0);
-  const [detail, setDetail] = useState(null);
   const [focusRequest, setFocusRequest] = useState(null);
   const pending = useRef(null);
   useEffect(() => () => clearTimeout(pending.current), []);
@@ -53,21 +33,30 @@ function Home() {
     setFront(index);
     setFocusRequest({ id: index, nonce: performance.now() });
     pending.current = setTimeout(() => {
-      if (index === 3) navigate('/blog'); else setDetail(index);
+      navigate(content[index].path);
     }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650);
   }, [navigate]);
-  return <><main><section className="intro"><p className="eyebrow">DEVELOPER · EXPLORER · MAKER</p>
-    <h1>생각을 연결하고,<br />가능성을 만듭니다<span>.</span></h1>
-    <p className="bio">웹에서 서버, 그리고 새로운 실험까지.<br />경계를 정하기보다, 필요한 것을 만드는 개발자.</p>
-    <nav aria-label="포트폴리오 메뉴">{content.map((item, index) => <button key={item.en} className={`nav-item ${front === index ? 'front' : ''}`} onClick={() => choose(index)}><span className="num">0{index + 1}</span><span>{item.name} <small>{['About', 'Projects', 'Toolkit', 'Blog', 'Contact'][index]}</small></span><span className="arrow">↗</span></button>)}</nav>
-    <p className="intro-foot">하나의 개발자, 여러 가지 관점.</p></section>
-    <Suspense fallback={<section className="visual"><p className="loading">다면체를 불러오는 중입니다.</p></section>}><Polyhedron front={front} onFront={setFront} onSelect={choose} focusRequest={focusRequest} blocked={detail !== null} /></Suspense>
-  </main>{detail !== null && <Detail index={detail} onClose={() => setDetail(null)} />}</>;
+  return <main className="home-page"><section className="intro"><p className="eyebrow">DEVELOPMENT & NOTES</p>
+    <h1>만들고, 실험하고,<br />기록합니다<span>.</span></h1>
+    <p className="bio">웹과 서버를 넘나들며 만드는 소프트웨어.<br />직접 만든 결과와 그 과정에서 배운 것을 남깁니다.</p>
+    <Link className="home-blog-link" href="/blog">최근 기록 읽기 <span>↗</span></Link></section>
+    <Suspense fallback={<section className="visual"><p className="loading">다면체를 불러오는 중입니다.</p></section>}><Polyhedron front={front} onFront={setFront} onSelect={choose} focusRequest={focusRequest} blocked={false} /></Suspense>
+  </main>;
+}
+
+function SectionPage({ page }) {
+  const index = content.findIndex(item => item.path === `/${page}`);
+  const item = content[index];
+  return <main className={`section-page ${page}-page`}><div className="section-heading"><p className="eyebrow">0{index + 1} / {item.en}</p><h1>{item.title}<span>.</span></h1><p>{item.copy}</p></div>
+    {page === 'projects' ? <article className="project-feature"><div className="project-meta"><span>01 / WEB</span><span>2026 —</span></div><h2>VERTEX</h2><p className="project-lead">포트폴리오와 개발 블로그를 한 공간에.</p><p>회전하는 다면체로 작업과 기록을 탐색하는 개인 사이트입니다. 글은 마크다운으로 작성하고, 방문자는 회원가입 없이 이름과 비밀번호로 댓글을 남길 수 있습니다.</p><div className="project-facts"><div><h3>인터랙션</h3><p>꼭짓점을 선택해 페이지로 이동하고, 드래그를 멈추면 자동 회전을 재개합니다.</p></div><div><h3>기록과 대화</h3><p>주제별 글 목록과 개별 글 페이지, 비밀번호로 수정·삭제하는 댓글을 지원합니다.</p></div></div><div className="project-tags">{['React', 'Three.js', 'Cloudflare Workers', 'D1'].map(tag => <span className="tag" key={tag}>{tag}</span>)}</div><Link className="text-link" href="/">사이트 둘러보기 ↗</Link></article>
+    : page === 'contact' ? <section className="contact-panel"><span className="contact-symbol" aria-hidden="true">↗</span><h2>질문도, 다른 생각도 환영합니다.</h2><p>글을 읽으며 떠오른 질문이나 공유하고 싶은 경험이 있다면 댓글로 남겨 주세요. 이름과 비밀번호만 있으면 이야기를 시작할 수 있습니다.</p><Link className="primary-link" href="/blog">블로그에서 이야기 나누기 ↗</Link></section>
+    : <div className="section-entries">{item.items.map(([title, description, ...tags], row) => <article className="section-entry" key={title}><span className="entry-index">0{row + 1}</span><div><h2>{title}</h2><p>{description}</p>{tags.length > 0 && <div>{tags.map(tag => <span className="tag" key={tag}>{tag}</span>)}</div>}</div></article>)}</div>}
+  </main>;
 }
 
 function PostRow({ post }) {
   return <article className="post-row"><div className="post-date"><time dateTime={post.date}>{post.date.replaceAll('-', '.')}</time><span>{post.category}</span></div>
-    <div className="post-summary"><div className="post-title-line"><h2><Link href={`/blog/${post.slug}`}>{post.title}</Link></h2>{post.sample && <span className="sample-badge">예시</span>}</div>
+    <div className="post-summary"><div className="post-title-line"><h2><Link href={`/blog/${post.slug}`}>{post.title}</Link></h2></div>
     <p>{post.description}</p><div className="post-tags">{post.tags.map(tag => <span key={tag}>#{tag}</span>)}<span>{post.readingMinutes}분 읽기</span></div></div><Link href={`/blog/${post.slug}`} className="post-arrow" aria-label={`${post.title} 읽기`}>↗</Link></article>;
 }
 
@@ -85,14 +74,14 @@ function Blog() {
 function Post({ post }) {
   const related = posts.filter(item => item.slug !== post.slug).slice(0, 2);
   return <main className="article-page"><Link className="back-link" href="/blog">← 모든 글</Link>
-    <article><div className="article-heading"><p className="eyebrow">{post.category} {post.sample && ' / 예시 글'}</p><h1>{post.title}</h1><p className="article-description">{post.description}</p><div className="article-meta"><time dateTime={post.date}>{post.date.replaceAll('-', '.')}</time><span>{post.readingMinutes}분 읽기</span>{post.tags.map(tag => <span key={tag}>#{tag}</span>)}</div></div>
+    <article><div className="article-heading"><p className="eyebrow">{post.category}</p><h1>{post.title}</h1><p className="article-description">{post.description}</p><div className="article-meta"><time dateTime={post.date}>{post.date.replaceAll('-', '.')}</time><span>{post.readingMinutes}분 읽기</span>{post.tags.map(tag => <span key={tag}>#{tag}</span>)}</div></div>
     <div className="prose"><ReactMarkdown remarkPlugins={[remarkGfm]}>{post.body}</ReactMarkdown></div></article>
     <Comments key={post.slug} slug={post.slug} />
     <section className="more-posts"><p className="eyebrow">계속 읽기</p>{related.map(item => <Link key={item.slug} href={`/blog/${item.slug}`}><span>{item.title}</span><span>↗</span></Link>)}<Link href="/blog"><span>글 목록으로</span><span>↗</span></Link></section>
   </main>;
 }
 
-function Missing() { return <main className="blog-page"><p className="eyebrow">404</p><h1>글을 찾을 수 없어요.</h1><p>주소가 바뀌었거나 아직 공개되지 않은 글입니다.</p><Link href="/blog">글 목록으로 돌아가기 ↗</Link></main>; }
+function Missing() { return <main className="blog-page"><p className="eyebrow">404</p><h1>페이지를 찾을 수 없어요.</h1><p>주소가 바뀌었거나 아직 공개되지 않은 페이지입니다.</p><Link href="/">홈으로 돌아가기 ↗</Link></main>; }
 
 function App() {
   const [pathname, setPathname] = useState(location.pathname);
@@ -100,14 +89,16 @@ function App() {
   useEffect(() => { const pop = () => setPathname(location.pathname); addEventListener('popstate', pop); return () => removeEventListener('popstate', pop); }, []);
   const route = readRoute(pathname);
   const post = route.page === 'post' ? posts.find(item => item.slug === route.slug) : null;
+  const section = content.find(item => item.path === `/${route.page}`);
+  const activePath = route.page === 'post' ? '/blog' : route.page === 'home' ? '/' : `/${route.page}`;
   useEffect(() => {
-    document.title = post ? `${post.title} — VERTEX` : route.page === 'blog' ? '블로그 — VERTEX' : route.page === 'home' ? 'VERTEX — Developer portfolio & blog' : '페이지를 찾을 수 없습니다 — VERTEX';
-    document.querySelector('meta[name="description"]')?.setAttribute('content', post?.description || '개발의 여러 면을 탐색하는 개인 포트폴리오와 개발 블로그');
+    document.title = post ? `${post.title} — VERTEX` : section ? `${section.name} — VERTEX` : route.page === 'home' ? 'VERTEX — Developer portfolio & blog' : '페이지를 찾을 수 없습니다 — VERTEX';
+    document.querySelector('meta[name="description"]')?.setAttribute('content', post?.description || section?.copy || '직접 만든 소프트웨어와 개발의 기록.');
     document.querySelector('#main-content')?.focus({ preventScroll: true });
   }, [pathname]);
-  return <Navigation.Provider value={navigate}><a className="skip-link" href="#main-content">본문으로 건너뛰기</a><header><Link className="brand" href="/" aria-label="홈">V<span>VERTEX</span></Link><span className="edition">PERSONAL PORTFOLIO / CONCEPT 02</span><Link className={`header-blog ${route.page !== 'home' ? 'active' : ''}`} href="/blog">블로그</Link><span className="draft">임시 시안</span></header>
-    <div id="main-content" tabIndex={-1}>{route.page === 'home' ? <Home /> : route.page === 'blog' ? <Blog /> : post ? <Post key={post.slug} post={post} /> : <Missing />}</div>
-    <footer><span>© 2026 VERTEX</span><span>끊임없이 탐색하는 중.</span><span>DESIGNED TO CONNECT</span></footer></Navigation.Provider>;
+  return <Navigation.Provider value={navigate}><a className="skip-link" href="#main-content">본문으로 건너뛰기</a><header className="site-header"><Link className="brand" href="/" aria-label="VERTEX 홈">V<span>VERTEX</span></Link><nav className="top-nav" aria-label="주 메뉴">{[{ path: '/', name: '홈' }, ...content].map(item => <Link href={item.path} key={item.path} aria-current={activePath === item.path ? 'page' : undefined}>{item.name}</Link>)}</nav></header>
+    <div id="main-content" tabIndex={-1}>{route.page === 'home' ? <Home /> : route.page === 'blog' ? <Blog /> : post ? <Post key={post.slug} post={post} /> : section ? <SectionPage key={route.page} page={route.page} /> : <Missing />}</div>
+    <footer><span>© 2026 VERTEX</span><span>개발과 기록.</span><Link href="/blog">블로그 ↗</Link></footer></Navigation.Provider>;
 }
 
 createRoot(document.getElementById('root')).render(<App />);
