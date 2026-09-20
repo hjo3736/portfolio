@@ -27,7 +27,7 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.domElement.setAttribute('aria-hidden', 'true');
     stage.appendChild(renderer.domElement);
-    const geometry = new THREE.IcosahedronGeometry(1.95, 0);
+    const geometry = new THREE.IcosahedronGeometry(2.25, 1);
     const edges = new THREE.EdgesGeometry(geometry);
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0x8392ca, transparent: true, opacity: 0.65 });
     group.add(new THREE.LineSegments(edges, lineMaterial));
@@ -43,7 +43,7 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
       dot.position.copy(vertex);
       group.add(dot);
     });
-    const chosen = [0, 2, 4, 7, 10].map(i => vertices[i]);
+    const chosen = [0, 8, 16, 24, 32].map(i => vertices[i]);
     let width = 1, height = 1, previousTime = 0, raf = 0, nearestPrevious = -1, pointer = null;
     const touch = () => { state.resumeAt = performance.now() + IDLE_DELAY; };
     const resize = () => {
@@ -51,7 +51,8 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
       height = stage.clientHeight;
       renderer.setSize(width, height);
       camera.aspect = width / height;
-      camera.position.z = width < 400 ? 9.7 : 7.6;
+      const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+      camera.position.z = 2.25 / Math.sin(Math.atan(Math.tan(halfFov) * Math.min(camera.aspect, 1))) * 1.12;
       camera.updateProjectionMatrix();
     };
     const observer = new ResizeObserver(resize);

@@ -50,15 +50,10 @@ function Home() {
       navigate(content[index].path);
     }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650);
   }, [navigate]);
-  return <div className="home-experience"><main className="home-scroll" ref={scrollRef} tabIndex={0} aria-label="소개, 프로젝트, 최근 기록"><section data-scene="0" className={`home-scene home-page ${scene === 0 ? 'is-current' : ''}`} aria-label="소개"><div className="intro"><p className="eyebrow">DEVELOPMENT & NOTES</p>
-    <h1>만들고, 실험하고,<br />기록합니다<span>.</span></h1>
-    <p className="bio">웹과 서버를 넘나들며 만드는 소프트웨어.<br />직접 만든 결과와 그 과정에서 배운 것을 남깁니다.</p>
-    <Link className="home-blog-link" href="/blog">최근 기록 읽기 <span>↗</span></Link></div>
-    <Suspense fallback={<section className="visual"><p className="loading">다면체를 불러오는 중입니다.</p></section>}><Polyhedron front={front} onFront={setFront} onSelect={choose} focusRequest={focusRequest} blocked={scene !== 0} /></Suspense>
-    <button className="scene-next" onClick={() => moveTo(1)}>프로젝트 살펴보기 <span>↓</span></button></section>
-    <section data-scene="1" className={`home-scene scene-project ${scene === 1 ? 'is-current' : ''}`} aria-labelledby="home-project-title"><div className="scene-content"><p className="eyebrow">01 / SELECTED PROJECT</p><h2 id="home-project-title">아이디어를<br />작동하는 것으로<span>.</span></h2><article className="home-project-card"><div className="project-meta"><span>WEB / 2026</span><span>React · Three.js</span></div><h3>VERTEX</h3><p>직접 만든 것과 만드는 과정을 담은 공간.<br />다면체 인터랙션, 개발 기록, 그리고 댓글로 이어지는 대화.</p><Link className="home-blog-link" href="/projects">프로젝트 자세히 보기 <span>↗</span></Link></article></div><button className="scene-next" onClick={() => moveTo(2)}>최근 기록 읽기 <span>↓</span></button></section>
-    <section data-scene="2" className={`home-scene scene-notes ${scene === 2 ? 'is-current' : ''}`} aria-labelledby="home-notes-title"><div className="scene-content"><p className="eyebrow">02 / RECENT NOTES</p><h2 id="home-notes-title">만드는 동안,<br />배운 것들<span>.</span></h2><div className="home-posts">{posts.slice(0, 2).map(post => <PostRow key={post.slug} post={post} />)}</div><Link className="home-blog-link" href="/blog">모든 기록 보기 <span>↗</span></Link></div><div className="home-end"><span>© 2026 VERTEX</span><button onClick={() => moveTo(0)}>처음으로 ↑</button></div></section>
-  </main><nav className="scene-indicator" aria-label="메인 화면 이동">{['소개', '프로젝트', '최근 기록'].map((label, index) => <button key={label} aria-label={label} aria-current={scene === index ? 'step' : undefined} onClick={() => moveTo(index)}><span />{scene === index && <small>{String(index + 1).padStart(2, '0')} / 03</small>}</button>)}</nav></div>;
+  return <div className="home-experience"><main className="home-scroll" ref={scrollRef} tabIndex={0} aria-label="소개와 다면체">
+<section data-scene="0" className={`home-scene home-page ${scene === 0 ? 'is-current' : ''}`} aria-label="소개"><div className="intro scene-content"><p className="eyebrow">DEVELOPMENT & NOTES</p><h1>만들고, 실험하고,<br />기록합니다<span>.</span></h1><p className="bio">웹과 서버를 넘나들며 만드는 소프트웨어.<br />직접 만든 결과와 그 과정에서 배운 것을 남깁니다.</p><Link className="home-blog-link" href="/blog">최근 기록 읽기 <span>↗</span></Link></div><button className="scene-next" onClick={() => moveTo(1)}>더 둘러보기 <span>↓</span></button></section>
+<section data-scene="1" className="home-scene poly-scene" aria-label="다면체 탐색"><Suspense fallback={<section className="visual"><p className="loading">다면체를 불러오는 중입니다.</p></section>}><Polyhedron front={front} onFront={setFront} onSelect={choose} focusRequest={focusRequest} blocked={scene !== 1} /></Suspense></section>
+</main></div>;
 }
 
 function SectionPage({ page }) {
