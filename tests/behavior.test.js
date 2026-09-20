@@ -3,17 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { canAutoRotate, IDLE_DELAY } from '../src/motion.js';
+import { canAutoRotate } from '../src/motion.js';
 import { parsePost, loadPosts } from '../scripts/posts.js';
 import { readRoute } from '../src/navigation.js';
 
-test('자동 회전은 조작 종료 3초 후 재개한다', () => {
-  const state = { paused: false, dragging: false, blocked: false, target: null, resumeAt: 1000 + IDLE_DELAY };
-  assert.equal(canAutoRotate(state, 3999), false);
-  assert.equal(canAutoRotate(state, 4000), true);
-  for (const key of ['paused', 'dragging', 'blocked', 'target']) {
-    assert.equal(canAutoRotate({ ...state, [key]: true }, 99999), false, `${key} 상태에서는 회전하지 않는다`);
-  }
+test('자동 회전은 조작이나 대기 시간으로 중단되지 않는다', () => {
+  assert.equal(canAutoRotate({ blocked: false, target: null, dragging: true, resumeAt: Infinity }), true);
+  assert.equal(canAutoRotate({ blocked: true, target: null }), false);
+  assert.equal(canAutoRotate({ blocked: false, target: {} }), false);
 });
 const markdown = (overrides = '', body = '본문입니다.') => `---\ntitle: "테스트 글"\ndate: "2026-09-17"\ndescription: "설명"\ncategory: "개발 일지"\ntags: ["React"]\n${overrides}---\n${body}`;
 test('메타데이터, 코드와 본문을 보존한다', () => {
