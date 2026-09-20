@@ -43,6 +43,9 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
       group.add(dot);
     });
     const chosen = [0, 8, 16, 24, 32].map(i => vertices[i]);
+    const rotationAxis = new THREE.Vector3();
+    const rotationStep = new THREE.Quaternion();
+    let rotationTime = 0;
     let width = 1, height = 1, previousTime = 0, raf = 0, nearestPrevious = -1, pointer = null;
     const resize = () => {
       width = stage.clientWidth;
@@ -95,8 +98,15 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
         group.quaternion.slerp(state.target, 1 - Math.exp(-7 * dt));
         if (group.quaternion.angleTo(state.target) < 0.002) state.target = null;
       } else if (canAutoRotate(state)) {
-        group.rotation.y += dt * 0.14;
-        group.rotation.x += dt * 0.025;
+        rotationTime += dt;
+        rotationAxis.set(
+          Math.sin(rotationTime * 0.19 + 0.6) * 0.85,
+          Math.cos(rotationTime * 0.13) * 0.9,
+          Math.sin(rotationTime * 0.17 - 0.8) * 0.65,
+        ).normalize();
+        const speed = 0.14 + Math.sin(rotationTime * 0.23) * 0.025;
+        rotationStep.setFromAxisAngle(rotationAxis, dt * speed);
+        group.quaternion.premultiply(rotationStep);
       }
       group.updateMatrixWorld();
       let nearest = 0, best = -Infinity;
