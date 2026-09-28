@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { content } from './sections';
+
 import { canAutoRotate } from './motion';
 
-export default function Polyhedron({ front, onFront, onSelect, focusRequest, blocked }) {
+export default function Polyhedron({ onSelect, blocked }) {
   const stageRef = useRef(null);
-  const nodeRefs = useRef([]);
+  const markerRef = useRef(null);
+  const lineRef = useRef(null);
+  const labelRef = useRef(null);
+  const reading = useRef(false);
+  const [expanded, setExpanded] = useState(false);
   const engine = useRef(null);
-  const callbacks = useRef({ onFront, onSelect });
-  callbacks.current = { onFront, onSelect };
+
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -42,7 +45,7 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
       dot.position.copy(vertex);
       group.add(dot);
     });
-    const chosen = [0, 8, 16, 24, 32].map(i => vertices[i]);
+    const chosen = [vertices[16]];
     const rotationAxis = new THREE.Vector3();
     const rotationStep = new THREE.Quaternion();
     let rotationTime = 0;
@@ -97,7 +100,7 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
       if (state.target) {
         group.quaternion.slerp(state.target, 1 - Math.exp(-7 * dt));
         if (group.quaternion.angleTo(state.target) < 0.002) state.target = null;
-      } else if (canAutoRotate(state)) {
+      } else if (canAutoRotate(state) && !reading.current) {
         rotationTime += dt;
         rotationAxis.set(
           Math.sin(rotationTime * 0.19 + 0.6) * 0.85,
@@ -109,20 +112,15 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
         group.quaternion.premultiply(rotationStep);
       }
       group.updateMatrixWorld();
-      let nearest = 0, best = -Infinity;
-      chosen.forEach((vertex, index) => {
-        const world = vertex.clone().applyQuaternion(group.quaternion);
-        if (world.z > best) { best = world.z; nearest = index; }
-        const projected = world.clone().project(camera);
-        const button = nodeRefs.current[index];
-        if (!button) return;
-        button.style.left = `${(projected.x * 0.5 + 0.5) * width + stage.offsetLeft}px`;
-        button.style.top = `${(-projected.y * 0.5 + 0.5) * height + stage.offsetTop}px`;
-        button.style.opacity = world.z < 0 ? '0.4' : '1';
-      });
-      if (!state.target && nearest !== nearestPrevious) {
-        nearestPrevious = nearest;
-        callbacks.current.onFront(nearest);
+      const world = chosen[0].clone().applyQuaternion(group.quaternion);
+      const projected = world.clone().project(camera);
+      const x = (projected.x * 0.5 + 0.5) * width + stage.offsetLeft;
+      const y = (-projected.y * 0.5 + 0.5) * height + stage.offsetTop;
+      if (markerRef.current && labelRef.current && lineRef.current) {
+        markerRef.current.style.left = x + 'px'; markerRef.current.style.top = y + 'px';
+        const label = labelRef.current;
+        const endX = label.offsetLeft + 16, endY = label.offsetTop + 22;
+        lineRef.current.setAttribute('points', x + ',' + y + ' ' + (endX - 30) + ',' + endY + ' ' + endX + ',' + endY);
       }
       renderer.render(scene, camera);
     }
@@ -141,17 +139,19 @@ export default function Polyhedron({ front, onFront, onSelect, focusRequest, blo
     };
   }, []);
 
-  useEffect(() => { if (focusRequest) engine.current?.focus(focusRequest.id); }, [focusRequest]);
   useEffect(() => {
     if (engine.current) engine.current.state.blocked = blocked;
   }, [blocked]);
-  const active = content[front];
-  return <section className="visual" aria-label="회전하는 포트폴리오 다면체">
+  const open = () => { reading.current = true; setExpanded(true); };
+  const close = () => { reading.current = false; setExpanded(false); };
+  return <section className="visual project-globe" aria-label="프로젝트를 탐색하는 다면체">
     <div className="orbit" aria-hidden="true" />
-    <div id="stage" ref={stageRef}>{failed && <p id="fallback">이 환경에서는 3D 화면을 표시할 수 없어요. 메뉴에서 모든 내용을 확인할 수 있습니다.</p>}</div>
-    {!failed && <div id="nodes">{content.map((item, index) => <button key={item.en} ref={el => { nodeRefs.current[index] = el; }}
-      className={`node ${front === index ? 'front' : ''}`} aria-label={`${item.name} 열기`} onClick={() => onSelect(index)}><span>{item.name}</span></button>)}</div>}
-    <div id="preview"><span className="eyebrow">0{front + 1} / {active.en}</span>
-      <button id="preview-open" onClick={() => onSelect(front)}>{active.title} ↗</button><p id="preview-copy">{active.copy}</p></div>
+    <div id="stage" ref={stageRef}>{failed && <p id="fallback">3D 화면을 표시할 수 없습니다. 아래에서 프로젝트를 확인해 주세요.</p>}</div>
+    <div className={expanded ? 'project-callout expanded' : 'project-callout'} onMouseEnter={open} onMouseLeave={event => { if (!event.currentTarget.contains(document.activeElement)) close(); }} onFocus={open} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) close(); }} onKeyDown={event => { if (event.key === 'Escape') close(); }}>
+      {!failed && <><svg className="project-leader" aria-hidden="true"><polyline ref={lineRef} /></svg><button className="project-pin" ref={markerRef} aria-label="현재진행형 프로젝트 정보" onClick={open} /></>}
+      <article ref={labelRef} className="project-label"><button className="project-name" aria-expanded={expanded} onClick={event => { if (matchMedia('(hover: none)').matches || event.detail === 0) { open(); } else onSelect(); }}>현재진행형 <span aria-hidden="true">↗</span></button>
+        {expanded && <div className="project-details"><p className="project-period">2026.09 — 진행 중</p><p>회전하는 다면체로 작업을 탐색하는 개인 포트폴리오. 개발 기록과 방문자의 이야기를 함께 담습니다.</p><a href="/projects" onClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) { event.preventDefault(); onSelect(); } }}>프로젝트 자세히 보기 ↗</a></div>}
+      </article>
+    </div>
   </section>;
 }

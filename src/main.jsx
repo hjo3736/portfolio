@@ -38,21 +38,9 @@ function Home() {
     Array.from(root.children).forEach(child => observer.observe(child));
     return () => observer.disconnect();
   }, []);
-  const [front, setFront] = useState(0);
-  const [focusRequest, setFocusRequest] = useState(null);
-  const pending = useRef(null);
-  useEffect(() => () => clearTimeout(pending.current), []);
-  const choose = useCallback(index => {
-    clearTimeout(pending.current);
-    setFront(index);
-    setFocusRequest({ id: index, nonce: performance.now() });
-    pending.current = setTimeout(() => {
-      navigate(content[index].path);
-    }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650);
-  }, [navigate]);
   return <div className="home-experience"><main className="home-scroll" ref={scrollRef} tabIndex={0} aria-label="소개와 다면체">
 <section data-scene="0" className={`home-scene home-page ${scene === 0 ? 'is-current' : ''}`} aria-label="소개"><div className="intro scene-content"><p className="eyebrow">DEVELOPMENT & NOTES</p><h1>만들고, 실험하고,<br />기록합니다<span>.</span></h1><p className="bio">웹과 서버를 넘나들며 만드는 소프트웨어.<br />직접 만든 결과와 그 과정에서 배운 것을 남깁니다.</p><Link className="home-blog-link" href="/blog">최근 기록 읽기 <span>↗</span></Link></div><button className="scene-next" onClick={() => moveTo(1)}>더 둘러보기 <span>↓</span></button></section>
-<section data-scene="1" className="home-scene poly-scene" aria-label="다면체 탐색"><Suspense fallback={<section className="visual"><p className="loading">다면체를 불러오는 중입니다.</p></section>}><Polyhedron front={front} onFront={setFront} onSelect={choose} focusRequest={focusRequest} blocked={scene !== 1} /></Suspense></section>
+<section data-scene="1" className="home-scene poly-scene" aria-label="다면체 탐색"><Suspense fallback={<section className="visual"><p className="loading">다면체를 불러오는 중입니다.</p></section>}><Polyhedron onSelect={() => navigate('/projects')} blocked={scene !== 1} /></Suspense></section>
 </main></div>;
 }
 
@@ -60,7 +48,7 @@ function SectionPage({ page }) {
   const index = content.findIndex(item => item.path === `/${page}`);
   const item = content[index];
   return <main className={`section-page ${page}-page`}><div className="section-heading"><p className="eyebrow">0{index + 1} / {item.en}</p><h1>{item.title}<span>.</span></h1><p>{item.copy}</p></div>
-    {page === 'projects' ? <article className="project-feature"><div className="project-meta"><span>01 / WEB</span><span>2026 —</span></div><h2>현재진행형</h2><p className="project-lead">포트폴리오와 개발 블로그를 한 공간에.</p><p>회전하는 다면체로 작업과 기록을 탐색하는 개인 사이트입니다. 글은 마크다운으로 작성하고, 방문자는 회원가입 없이 이름과 비밀번호로 댓글을 남길 수 있습니다.</p><div className="project-facts"><div><h3>인터랙션</h3><p>꼭짓점을 선택해 페이지로 이동하고, 드래그를 멈추면 자동 회전을 재개합니다.</p></div><div><h3>기록과 대화</h3><p>주제별 글 목록과 개별 글 페이지, 비밀번호로 수정·삭제하는 댓글을 지원합니다.</p></div></div><div className="project-tags">{['React', 'Three.js', 'Cloudflare Workers', 'D1'].map(tag => <span className="tag" key={tag}>{tag}</span>)}</div><Link className="text-link" href="/">사이트 둘러보기 ↗</Link></article>
+    {page === 'projects' ? <article className="project-feature"><div className="project-meta"><span>01 / WEB</span><span>2026 —</span></div><h2>현재진행형</h2><p className="project-lead">포트폴리오와 개발 블로그를 한 공간에.</p><p>회전하는 다면체로 작업과 기록을 탐색하는 개인 사이트입니다. 글은 마크다운으로 작성하고, 방문자는 회원가입 없이 이름과 비밀번호로 댓글을 남길 수 있습니다.</p><div className="project-facts"><div><h3>인터랙션</h3><p>다면체에 연결된 프로젝트 이름에 마우스를 올리면 기간과 설명이 펼쳐지고, 선택하면 프로젝트 페이지로 이동합니다.</p></div><div><h3>기록과 대화</h3><p>주제별 글 목록과 개별 글 페이지, 비밀번호로 수정·삭제하는 댓글을 지원합니다.</p></div></div><div className="project-tags">{['React', 'Three.js', 'Cloudflare Workers', 'D1'].map(tag => <span className="tag" key={tag}>{tag}</span>)}</div><Link className="text-link" href="/">사이트 둘러보기 ↗</Link></article>
     : page === 'contact' ? <section className="contact-panel"><span className="contact-symbol" aria-hidden="true">↗</span><h2>질문도, 다른 생각도 환영합니다.</h2><p>글을 읽으며 떠오른 질문이나 공유하고 싶은 경험이 있다면 댓글로 남겨 주세요. 이름과 비밀번호만 있으면 이야기를 시작할 수 있습니다.</p><Link className="primary-link" href="/blog">블로그에서 이야기 나누기 ↗</Link></section>
     : <div className="section-entries">{item.items.map(([title, description, ...tags], row) => <article className="section-entry" key={title}><span className="entry-index">0{row + 1}</span><div><h2>{title}</h2><p>{description}</p>{tags.length > 0 && <div>{tags.map(tag => <span className="tag" key={tag}>{tag}</span>)}</div>}</div></article>)}</div>}
   </main>;
