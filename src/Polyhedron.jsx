@@ -33,7 +33,7 @@ export default function Polyhedron({ onSelect, blocked }) {
     stage.appendChild(renderer.domElement);
     const geometry = new THREE.IcosahedronGeometry(2.25, 1);
     const edges = new THREE.EdgesGeometry(geometry);
-    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x8392ca, transparent: true, opacity: 0.65 });
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xc9b65e, transparent: true, opacity: 0.65 });
     group.add(new THREE.LineSegments(edges, lineMaterial));
     const vertices = [];
     for (let i = 0; i < geometry.attributes.position.count; i++) {
@@ -41,7 +41,7 @@ export default function Polyhedron({ onSelect, blocked }) {
       if (!vertices.some(v => v.distanceTo(vertex) < 0.01)) vertices.push(vertex);
     }
     const dotGeometry = new THREE.SphereGeometry(0.022, 8, 6);
-    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0x7587c8 });
+    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xf2d34f });
     vertices.forEach(vertex => {
       const dot = new THREE.Mesh(dotGeometry, dotMaterial);
       dot.position.copy(vertex);
