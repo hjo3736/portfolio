@@ -45,7 +45,9 @@ export default function Polyhedron({ onSelect, blocked }) {
       dot.position.copy(vertex);
       group.add(dot);
     });
-    const chosen = [vertices[16]];
+    // Per-project extension lengths remain stable while the globe rotates.
+    const projectMarkers = [{ vertex: 16, extension: 0.85 }];
+    const chosen = projectMarkers.map(project => vertices[project.vertex]);
     const rotationAxis = new THREE.Vector3();
     const rotationStep = new THREE.Quaternion();
     let rotationTime = 0;
@@ -114,17 +116,20 @@ export default function Polyhedron({ onSelect, blocked }) {
       group.updateMatrixWorld();
       const world = chosen[0].clone().applyQuaternion(group.quaternion);
       const projected = world.clone().project(camera);
+      const extended = world.clone().multiplyScalar(1 + projectMarkers[0].extension / world.length()).project(camera);
       const x = (projected.x * 0.5 + 0.5) * width + stage.offsetLeft;
       const y = (-projected.y * 0.5 + 0.5) * height + stage.offsetTop;
+      const endX = (extended.x * 0.5 + 0.5) * width + stage.offsetLeft;
+      const endY = (-extended.y * 0.5 + 0.5) * height + stage.offsetTop;
       if (markerRef.current && labelRef.current && lineRef.current) {
         markerRef.current.style.left = x + 'px'; markerRef.current.style.top = y + 'px';
         const label = labelRef.current;
-        const endY = Math.max(58, y - 70);
-        label.style.left = `${Math.max(8, Math.min(x - label.offsetWidth / 2, stage.parentElement.clientWidth - label.offsetWidth - 8))}px`;
-        label.style.top = `${endY - 44}px`;
+        const labelLeft = endX - label.offsetWidth / 2;
+        label.style.left = `${Math.max(8, Math.min(labelLeft, stage.parentElement.clientWidth - label.offsetWidth - 8))}px`;
+        label.style.top = `${Math.max(8, Math.min(endY + (endY < y ? -44 : 0), stage.parentElement.clientHeight - 52))}px`;
         label.style.setProperty('--detail-top', endY > 280 ? 'auto' : '100%');
         label.style.setProperty('--detail-bottom', endY > 280 ? '100%' : 'auto');
-        lineRef.current.setAttribute('points', `${x},${y} ${x},${endY}`);
+        lineRef.current.setAttribute('points', `${x},${y} ${endX},${endY}`);
       }
       renderer.render(scene, camera);
     }
