@@ -119,8 +119,12 @@ export default function Polyhedron({ onSelect, blocked }) {
       if (markerRef.current && labelRef.current && lineRef.current) {
         markerRef.current.style.left = x + 'px'; markerRef.current.style.top = y + 'px';
         const label = labelRef.current;
-        const endX = label.offsetLeft + 16, endY = label.offsetTop + 22;
-        lineRef.current.setAttribute('points', x + ',' + y + ' ' + (endX - 30) + ',' + endY + ' ' + endX + ',' + endY);
+        const endY = Math.max(58, y - 70);
+        label.style.left = `${Math.max(8, Math.min(x - label.offsetWidth / 2, stage.parentElement.clientWidth - label.offsetWidth - 8))}px`;
+        label.style.top = `${endY - 44}px`;
+        label.style.setProperty('--detail-top', endY > 280 ? 'auto' : '100%');
+        label.style.setProperty('--detail-bottom', endY > 280 ? '100%' : 'auto');
+        lineRef.current.setAttribute('points', `${x},${y} ${x},${endY}`);
       }
       renderer.render(scene, camera);
     }
