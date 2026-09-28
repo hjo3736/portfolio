@@ -28,6 +28,6 @@ const escape = value => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': 
 const routes = [...content.map(page => ({ slug: page.path.slice(1), title: page.name, description: page.copy })), ...posts.map(post => ({ ...post, slug: `blog/${post.slug}` }))];
 for (const route of routes) {
   const directory = path.join(output, route.slug); fs.mkdirSync(directory, { recursive: true });
-  fs.writeFileSync(path.join(directory, 'index.html'), html.replace(/<title>.*?<\/title>/, `<title>${escape(route.title)} — VERTEX</title>`).replace(/<meta name="description" content="[^"]*"\s*\/>/, `<meta name="description" content="${escape(route.description)}" />`));
+  fs.writeFileSync(path.join(directory, 'index.html'), html.replace(/<title>.*?<\/title>/, `<title>${escape(route.title)} — 현재진행형</title>`).replace(/<meta name="description" content="[^"]*"\s*\/>/, `<meta name="description" content="${escape(route.description)}" />`));
 }
 console.log('React pages built.');

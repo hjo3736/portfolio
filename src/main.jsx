@@ -60,7 +60,7 @@ function SectionPage({ page }) {
   const index = content.findIndex(item => item.path === `/${page}`);
   const item = content[index];
   return <main className={`section-page ${page}-page`}><div className="section-heading"><p className="eyebrow">0{index + 1} / {item.en}</p><h1>{item.title}<span>.</span></h1><p>{item.copy}</p></div>
-    {page === 'projects' ? <article className="project-feature"><div className="project-meta"><span>01 / WEB</span><span>2026 —</span></div><h2>VERTEX</h2><p className="project-lead">포트폴리오와 개발 블로그를 한 공간에.</p><p>회전하는 다면체로 작업과 기록을 탐색하는 개인 사이트입니다. 글은 마크다운으로 작성하고, 방문자는 회원가입 없이 이름과 비밀번호로 댓글을 남길 수 있습니다.</p><div className="project-facts"><div><h3>인터랙션</h3><p>꼭짓점을 선택해 페이지로 이동하고, 드래그를 멈추면 자동 회전을 재개합니다.</p></div><div><h3>기록과 대화</h3><p>주제별 글 목록과 개별 글 페이지, 비밀번호로 수정·삭제하는 댓글을 지원합니다.</p></div></div><div className="project-tags">{['React', 'Three.js', 'Cloudflare Workers', 'D1'].map(tag => <span className="tag" key={tag}>{tag}</span>)}</div><Link className="text-link" href="/">사이트 둘러보기 ↗</Link></article>
+    {page === 'projects' ? <article className="project-feature"><div className="project-meta"><span>01 / WEB</span><span>2026 —</span></div><h2>현재진행형</h2><p className="project-lead">포트폴리오와 개발 블로그를 한 공간에.</p><p>회전하는 다면체로 작업과 기록을 탐색하는 개인 사이트입니다. 글은 마크다운으로 작성하고, 방문자는 회원가입 없이 이름과 비밀번호로 댓글을 남길 수 있습니다.</p><div className="project-facts"><div><h3>인터랙션</h3><p>꼭짓점을 선택해 페이지로 이동하고, 드래그를 멈추면 자동 회전을 재개합니다.</p></div><div><h3>기록과 대화</h3><p>주제별 글 목록과 개별 글 페이지, 비밀번호로 수정·삭제하는 댓글을 지원합니다.</p></div></div><div className="project-tags">{['React', 'Three.js', 'Cloudflare Workers', 'D1'].map(tag => <span className="tag" key={tag}>{tag}</span>)}</div><Link className="text-link" href="/">사이트 둘러보기 ↗</Link></article>
     : page === 'contact' ? <section className="contact-panel"><span className="contact-symbol" aria-hidden="true">↗</span><h2>질문도, 다른 생각도 환영합니다.</h2><p>글을 읽으며 떠오른 질문이나 공유하고 싶은 경험이 있다면 댓글로 남겨 주세요. 이름과 비밀번호만 있으면 이야기를 시작할 수 있습니다.</p><Link className="primary-link" href="/blog">블로그에서 이야기 나누기 ↗</Link></section>
     : <div className="section-entries">{item.items.map(([title, description, ...tags], row) => <article className="section-entry" key={title}><span className="entry-index">0{row + 1}</span><div><h2>{title}</h2><p>{description}</p>{tags.length > 0 && <div>{tags.map(tag => <span className="tag" key={tag}>{tag}</span>)}</div>}</div></article>)}</div>}
   </main>;
@@ -104,13 +104,13 @@ function App() {
   const section = content.find(item => item.path === `/${route.page}`);
   const activePath = route.page === 'post' ? '/blog' : route.page === 'home' ? '/' : `/${route.page}`;
   useEffect(() => {
-    document.title = post ? `${post.title} — VERTEX` : section ? `${section.name} — VERTEX` : route.page === 'home' ? 'VERTEX — Developer portfolio & blog' : '페이지를 찾을 수 없습니다 — VERTEX';
+    document.title = post ? `${post.title} — 현재진행형` : section ? `${section.name} — 현재진행형` : route.page === 'home' ? '현재진행형 — Developer portfolio & blog' : '페이지를 찾을 수 없습니다 — 현재진행형';
     document.querySelector('meta[name="description"]')?.setAttribute('content', post?.description || section?.copy || '직접 만든 소프트웨어와 개발의 기록.');
     document.querySelector('#main-content')?.focus({ preventScroll: true });
   }, [pathname]);
-  return <Navigation.Provider value={navigate}><a className="skip-link" href="#main-content">본문으로 건너뛰기</a><header className="site-header"><Link className="brand" href="/" aria-label="VERTEX 홈">V<span>VERTEX</span></Link><nav className="top-nav" aria-label="주 메뉴">{[{ path: '/', name: '홈' }, ...content].map(item => <Link href={item.path} key={item.path} aria-current={activePath === item.path ? 'page' : undefined}>{item.name}</Link>)}</nav></header>
+  return <Navigation.Provider value={navigate}><a className="skip-link" href="#main-content">본문으로 건너뛰기</a><header className="site-header"><Link className="brand" href="/" aria-label="현재진행형 홈"><span>현재진행형</span></Link><nav className="top-nav" aria-label="주 메뉴">{[{ path: '/', name: '홈' }, ...content].map(item => <Link href={item.path} key={item.path} aria-current={activePath === item.path ? 'page' : undefined}>{item.name}</Link>)}</nav></header>
     <div id="main-content" tabIndex={-1}>{route.page === 'home' ? <Home /> : route.page === 'blog' ? <Blog /> : post ? <Post key={post.slug} post={post} /> : section ? <SectionPage key={route.page} page={route.page} /> : <Missing />}</div>
-    {route.page !== 'home' && <footer><span>© 2026 VERTEX</span><span>개발과 기록.</span><Link href="/blog">블로그 ↗</Link></footer>}</Navigation.Provider>;
+    {route.page !== 'home' && <footer><span>© 2026 현재진행형</span><span>개발과 기록.</span><Link href="/blog">블로그 ↗</Link></footer>}</Navigation.Provider>;
 }
 
 createRoot(document.getElementById('root')).render(<App />);
