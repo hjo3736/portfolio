@@ -10,18 +10,11 @@ import './blog.css';
 import Comments from './Comments';
 import './pages.css';
 import './home-scroll.css';
+import { Navigation, Link } from './Link';
+import Projects from './Projects';
+import Contact from './Contact';
 
 const Polyhedron = lazy(() => import('./Polyhedron'));
-const Navigation = React.createContext(null);
-function Link({ href, children, onClick, ...props }) {
-  const navigate = React.useContext(Navigation);
-  return <a href={href} {...props} onClick={event => {
-    onClick?.(event);
-    if (!event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
-      event.preventDefault(); navigate(href);
-    }
-  }}>{children}</a>;
-}
 
 function Home() {
   const navigate = React.useContext(Navigation);
@@ -48,8 +41,8 @@ function SectionPage({ page }) {
   const index = content.findIndex(item => item.path === `/${page}`);
   const item = content[index];
   return <main className={`section-page ${page}-page`}><div className="section-heading"><p className="eyebrow">0{index + 1} / {item.en}</p><h1>{item.title}<span>.</span></h1><p>{item.copy}</p></div>
-    {page === 'projects' ? <article className="project-feature"><div className="project-meta"><span>01 / WEB</span><span>2026 —</span></div><h2>현재진행형</h2><p className="project-lead">포트폴리오와 개발 블로그를 한 공간에.</p><p>회전하는 다면체로 작업과 기록을 탐색하는 개인 사이트입니다. 글은 마크다운으로 작성하고, 방문자는 회원가입 없이 이름과 비밀번호로 댓글을 남길 수 있습니다.</p><div className="project-facts"><div><h3>인터랙션</h3><p>다면체에 연결된 프로젝트 이름에 마우스를 올리면 기간과 설명이 펼쳐지고, 선택하면 프로젝트 페이지로 이동합니다.</p></div><div><h3>기록과 대화</h3><p>주제별 글 목록과 개별 글 페이지, 비밀번호로 수정·삭제하는 댓글을 지원합니다.</p></div></div><div className="project-tags">{['React', 'Three.js', 'Cloudflare Workers', 'D1'].map(tag => <span className="tag" key={tag}>{tag}</span>)}</div><Link className="text-link" href="/">사이트 둘러보기 ↗</Link></article>
-    : page === 'contact' ? <section className="contact-panel"><span className="contact-symbol" aria-hidden="true">↗</span><h2>질문도, 다른 생각도 환영합니다.</h2><p>글을 읽으며 떠오른 질문이나 공유하고 싶은 경험이 있다면 댓글로 남겨 주세요. 이름과 비밀번호만 있으면 이야기를 시작할 수 있습니다.</p><Link className="primary-link" href="/blog">블로그에서 이야기 나누기 ↗</Link></section>
+    {page === 'projects' ? <Projects />
+    : page === 'contact' ? <Contact />
     : <div className="section-entries">{item.items.map(([title, description, ...tags], row) => <article className="section-entry" key={title}><span className="entry-index">0{row + 1}</span><div><h2>{title}</h2><p>{description}</p>{tags.length > 0 && <div>{tags.map(tag => <span className="tag" key={tag}>{tag}</span>)}</div>}</div></article>)}</div>}
   </main>;
 }

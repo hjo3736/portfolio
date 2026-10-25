@@ -2,9 +2,9 @@ import { Miniflare } from 'miniflare';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export async function startLocal({ persist = false, port = 0 } = {}) {
+export async function startLocal({ persist = false, port = 0, commentsPath = '.sites-runtime/comments' } = {}) {
   const mf = new Miniflare({ modules: true, scriptPath: path.resolve('dist/server/index.js'), compatibilityDate: '2026-08-01',
-    host: '127.0.0.1', port, cf: false, d1Databases: ['DB'], d1Persist: persist ? path.resolve('.sites-runtime/comments') : false });
+    host: '127.0.0.1', port, cf: false, d1Databases: ['DB'], d1Persist: persist ? path.resolve(commentsPath) : false });
   const db = await mf.getD1Database('DB');
   await db.prepare('CREATE TABLE IF NOT EXISTS local_migrations (name TEXT PRIMARY KEY)').run();
   for (const file of fs.readdirSync('drizzle').filter(file => file.endsWith('.sql')).sort()) {

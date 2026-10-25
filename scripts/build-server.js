@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'esbuild';
-import { loadPosts } from './posts.js';
+import { loadPostsFromStore } from './posts.js';
 const root = path.resolve('dist'), assets = {};
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
 function scan(directory) {
@@ -16,7 +16,7 @@ scan(root);
 await build({ entryPoints: ['server/worker.js'], outfile: 'dist/server/index.js', bundle: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
   plugins: [{ name: 'server-content', setup(builder) {
     builder.onResolve({ filter: /^virtual:/ }, args => ({ path: args.path, namespace: 'data' }));
-    builder.onLoad({ filter: /.*/, namespace: 'data' }, args => ({ contents: `export default ${JSON.stringify(args.path === 'virtual:server-assets' ? assets : loadPosts(path.resolve('content/posts')).map(post => post.slug))}`, loader: 'js' }));
+    builder.onLoad({ filter: /.*/, namespace: 'data' }, args => ({ contents: `export default ${JSON.stringify(args.path === 'virtual:server-assets' ? assets : loadPostsFromStore(path.resolve('content/posts.db')).map(post => post.slug))}`, loader: 'js' }));
   } }],
 });
 fs.mkdirSync('dist/.openai', { recursive: true });

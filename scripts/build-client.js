@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'esbuild';
-import { loadPosts } from './posts.js';
+import { loadPostsFromStore } from './posts.js';
 import { content } from '../src/sections.js';
 
 const root = process.cwd(), output = path.resolve(root, 'dist');
 if (path.dirname(output) !== root || path.basename(output) !== 'dist') throw new Error('Unexpected build directory');
-const posts = loadPosts(path.resolve('content/posts'));
+const posts = loadPostsFromStore(path.resolve('content/posts.db'));
 fs.rmSync(output, { recursive: true, force: true });
 fs.mkdirSync(output, { recursive: true });
 const result = await build({ entryPoints: ['src/main.jsx'], outdir: 'dist', entryNames: 'assets/index-[hash]', chunkNames: 'assets/chunk-[hash]',

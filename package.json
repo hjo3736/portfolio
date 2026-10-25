@@ -9,7 +9,11 @@
     "preview": "node scripts/preview.js",
     "test": "node --test tests/*.test.js",
     "db:generate": "drizzle-kit generate",
-    "test:comments": "node --test tests/comments.test.js"
+    "test:comments": "node --test tests/comments.test.js",
+    "posts:import": "node scripts/posts-import.js",
+    "posts:export": "node scripts/posts-export.js",
+    "posts:delete": "node scripts/posts-delete.js",
+    "posts:editor": "node scripts/posts-editor.js"
   },
   "dependencies": {
     "react": "^19.3.0",

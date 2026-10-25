@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 import { canAutoRotate } from './motion';
+import { projects } from './project-data';
 
 export default function Polyhedron({ onSelect, blocked }) {
+  const project = projects[0];
   const stageRef = useRef(null);
   const markerRef = useRef(null);
   const lineRef = useRef(null);
@@ -51,19 +53,21 @@ export default function Polyhedron({ onSelect, blocked }) {
       group.add(dot);
     });
     // Per-project extension lengths remain stable while the globe rotates.
-    const projectMarkers = [{ vertex: 16, extension: 0.85 }];
+    const projectMarkers = [{ vertex: 16, extension: 0.85, maxExtension: 0.85 }];
     const chosen = projectMarkers.map(project => vertices[project.vertex]);
     const rotationAxis = new THREE.Vector3();
     const rotationStep = new THREE.Quaternion();
     let rotationTime = 0;
     let width = 1, height = 1, previousTime = 0, raf = 0, nearestPrevious = -1, pointer = null;
     const resize = () => {
-      width = stage.clientWidth;
-      height = stage.clientHeight;
+      const nextWidth = stage.clientWidth, nextHeight = stage.clientHeight;
+      if (!(nextWidth > 0 && nextHeight > 0)) return;
+      width = nextWidth; height = nextHeight;
       renderer.setSize(width, height);
       camera.aspect = width / height;
       const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
       camera.position.z = 2.25 / Math.sin(Math.atan(Math.tan(halfFov) * Math.min(camera.aspect, 1))) * 1.12;
+      projectMarkers[0].extension = Math.min(projectMarkers[0].maxExtension, camera.position.z * Math.sin(Math.atan(Math.tan(halfFov) * camera.aspect)) - 2.25);
       camera.updateProjectionMatrix();
     };
     const observer = new ResizeObserver(resize);
@@ -189,10 +193,10 @@ export default function Polyhedron({ onSelect, blocked }) {
     <div className="orbit" aria-hidden="true" />
     <div id="stage" ref={stageRef}>{failed && <p id="fallback">3D 화면을 표시할 수 없습니다. 아래에서 프로젝트를 확인해 주세요.</p>}</div>
     <div ref={calloutRef} className={expanded ? 'project-callout expanded' : 'project-callout'} onFocus={event => { if (event.target.matches(':focus-visible')) { keyboardFocus.current = true; open(); } }} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) { keyboardFocus.current = false; scheduleClose(); } }} onPointerDown={() => { keyboardFocus.current = false; }} onKeyDown={event => { if (event.key === 'Escape') { keyboardFocus.current = false; close(); } }}>
-      {!failed && <><svg className="project-leader" aria-hidden="true"><polyline ref={lineRef} /></svg><button className="project-pin" {...hoverHandlers} ref={markerRef} aria-label="현재진행형 프로젝트 정보" onClick={open} /></>}
-      <article ref={labelRef} className="project-label" {...hoverHandlers}><button className="project-name" aria-expanded={expanded} onClick={event => { if (matchMedia('(hover: none)').matches || event.detail === 0) { open(); } else onSelect(); }}>현재진행형 <span aria-hidden="true">↗</span></button>
-      </article>
-        {expanded && <div className="project-details" {...hoverHandlers}><h2>현재진행형</h2><p className="project-period">2026.09 — 진행 중</p><p>회전하는 다면체로 작업을 탐색하는 개인 포트폴리오. 개발 기록과 방문자의 이야기를 함께 담습니다.</p><a href="/projects" onClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) { event.preventDefault(); onSelect(); } }}>프로젝트 자세히 보기 ↗</a></div>}
+      {!failed && project && <><svg className="project-leader" aria-hidden="true"><polyline ref={lineRef} /></svg><button className="project-pin" {...hoverHandlers} ref={markerRef} aria-label={`${project.title} 프로젝트 정보`} onClick={open} /></>}
+      {project && <article ref={labelRef} className="project-label" {...hoverHandlers}><button className="project-name" aria-expanded={expanded} onClick={event => { if (matchMedia('(hover: none)').matches || event.detail === 0) { open(); } else onSelect(); }}>{project.title} <span aria-hidden="true">↗</span></button>
+      </article>}
+        {expanded && project && <div className="project-details" {...hoverHandlers}><h2>{project.title}</h2><p className="project-period">{project.period}</p><p>{project.lead}</p><a href="/projects" onClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) { event.preventDefault(); onSelect(); } }}>프로젝트 자세히 보기 ↗</a></div>}
     </div>
   </section>;
 }

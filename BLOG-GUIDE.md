@@ -19,7 +19,32 @@ npm run preview
 
 ## 글 작성
 
-`content/posts/`에 `.md` 파일을 추가하면 글 목록에 자동으로 반영됩니다. 예를 들어 `react-state-notes.md`는 `/blog/react-state-notes` 주소를 갖습니다. 파일명에는 영문 소문자, 숫자, 하이픈을 사용하세요.
+`content/posts/`에 `.md` 파일을 추가한 뒤 `npm run posts:import`를 실행하면 글 저장소 `content/posts.db`에 들어가고 빌드에 반영됩니다. 예를 들어 `react-state-notes.md`는 `/blog/react-state-notes` 주소를 갖습니다. 파일명에는 영문 소문자, 숫자, 하이픈을 사용하세요.
+
+### 브라우저에서 쓰기
+
+`npm run posts:editor`를 실행하면 <http://127.0.0.1:4280>에 로컬 편집기가 뜹니다. 목록에서 글을 골라 고치거나 새 글을 쓰고, 저장하면 `content/posts.db`에 바로 들어갑니다. `.md` 파일을 만들고 `npm run posts:import`를 돌리는 과정을 건너뜁니다.
+
+**저장은 발행이 아닙니다.** 편집기는 글 저장소까지만 씁니다. 화면에 반영하려면 `npm run build`를 따로 실행하세요.
+
+몇 가지 선이 있습니다.
+
+- 슬러그는 직접 입력하며 저장한 뒤에는 바꿀 수 없습니다. 주소가 되는 값이라서입니다.
+- 입력 검증은 `npm run posts:import`와 **같은 규칙**을 씁니다. 어긋나면 저장되지 않고 같은 메시지가 화면에 뜹니다.
+- 공개 글이 이 글 하나뿐이면 초안 체크박스를 누를 수 없습니다. 전부 초안이 되면 `npm run build`가 거부하기 때문입니다.
+- 글을 지우는 기능은 없습니다. `npm run posts:delete -- <슬러그>`를 쓰세요 — 지우기 전에 마크다운 사본을 남깁니다.
+- 포트는 `POSTS_EDITOR_PORT`로 바꿉니다. 이미 쓰이는 포트면 그 자리에서 멈춥니다.
+- 로컬 전용입니다. 빌드가 `scripts/`를 읽지 않으므로 배포본 `dist/`에 들어가지 않습니다.
+
+### 글 저장소가 없을 때
+
+`content/posts.db`는 git에 올리지 않습니다. 저장소를 새로 받은 곳에는 글 저장소가 없어 `npm run build`가 다음과 같이 멈춥니다. `npm run posts:import`를 한 번 실행하면 `content/posts/`의 md가 저장소로 들어갑니다.
+
+```
+content/posts.db: 글 저장소가 없습니다. 글을 옮기려면 npm run posts:import을 실행하세요.
+```
+
+경로는 실제로는 절대 경로로 나옵니다.
 
 ```markdown
 ---
@@ -42,11 +67,12 @@ draft: false
 - `category`는 자유롭게 지정하며 새 주제는 목록 필터에 자동으로 추가됩니다.
 - `draft: true`인 글은 공개 목록과 빌드 결과에서 제외됩니다. `false`로 바꾸면 게시 대상에 포함됩니다.
 - 기본 글 두 편은 개발 기록을 시작하는 글과 홈의 회전 인터랙션을 다루는 글입니다. 필요에 맞게 수정할 수 있습니다.
-- 글 수정은 해당 파일 수정, 삭제는 파일 삭제로 합니다.
+- 글 수정은 `content/posts/`의 `.md`를 고친 뒤 `npm run posts:import`를 다시 실행합니다. 같은 파일명(슬러그)이면 저장소의 기존 글을 덮어씁니다.
+- 글 삭제는 지금 스크립트가 없습니다. `.md`를 지워도 저장소에 들어간 글은 남습니다 — `npm run posts:import`는 넣고 덮어쓰기만 합니다.
 - 이미지는 `public/images/`에 넣고 `![설명](/images/파일명.png)`으로 연결합니다.
 - 글이나 코드를 수정한 뒤 미리보기를 중지하고 `npm run dev`로 다시 시작하면 반영됩니다. 방문자에게 보여주려면 다시 빌드하고 배포해야 합니다.
-- 블로그 글쓰기는 파일 방식입니다. 브라우저 관리자 편집기는 포함하지 않습니다. 방문자 댓글은 별도 데이터베이스에 저장됩니다.
-- 초안은 배포 결과에서는 제외되지만 소스 저장소에는 남습니다. 소스 저장소를 공개한다면 초안도 확인하세요.
+- 블로그 글은 마크다운 파일로 쓰고 `npm run posts:import`로 넣거나, `npm run posts:editor`로 브라우저에서 직접 씁니다. 편집기는 로컬에서만 돌고 **배포본에는 포함되지 않습니다** — 방문자가 볼 수 있는 관리자 화면은 없습니다. 방문자 댓글은 별도 데이터베이스에 저장됩니다.
+- 초안은 빌드 결과에서 제외되지만 글 저장소 `content/posts.db`에는 남습니다. 이 파일은 git에 올라가지 않습니다.
 
 ## 주요 구조
 
@@ -54,8 +80,8 @@ draft: false
 - `src/Polyhedron.jsx`: Three.js 장면, 드래그, 자원 정리.
 - `src/motion.js`: 자동 회전 조건. 조작 후 3초가 지나면 재개하며 수동 정지는 유지합니다.
 - `src/styles.css`, `src/blog.css`: 포트폴리오와 블로그 반응형 스타일.
-- `scripts/posts.js`: 메타데이터 검증, 초안 제외, 날짜 정렬.
-- `scripts/build-client.js`: 글 자동 수집과 개별 주소의 HTML 진입점 생성.
+- `scripts/posts.js`: 글 저장소 열기, 메타데이터 검증, 초안 제외, 날짜 정렬.
+- `scripts/build-client.js`: 글 저장소에서 글 읽기와 개별 주소의 HTML 진입점 생성.
 - `scripts/build-server.js`: 화면 파일과 댓글 API를 Worker로 패키징.
 - `.openai/hosting.json`: 기존 Sites 연결 정보.
 
