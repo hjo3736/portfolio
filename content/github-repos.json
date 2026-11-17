@@ -1,0 +1,116 @@
+{
+  "user": "hjo3736",
+  "profile": "https://github.com/hjo3736",
+  "repos": [
+    {
+      "name": "imitation_game",
+      "description": "그림, 도예 등등 다양한 예술작품을 모작하고 판매하는 시뮬레이션 게임",
+      "language": "GDScript",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/imitation_game",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2026-11-11"
+    },
+    {
+      "name": "skills",
+      "description": "",
+      "language": "",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/skills",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2026-11-05"
+    },
+    {
+      "name": "slackattic",
+      "description": "Self-hosted daily archive and searchable viewer for free Slack workspaces",
+      "language": "Python",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/slackattic",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2026-10-31"
+    },
+    {
+      "name": "pcg-puzzle",
+      "description": "pcg-puzzle",
+      "language": "JavaScript",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/pcg-puzzle",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2025-11-24"
+    },
+    {
+      "name": "BaekJoon",
+      "description": "My Solutions for BaekJoon",
+      "language": "C++",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/BaekJoon",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2024-09-16"
+    },
+    {
+      "name": "DeckBuildRoguelike",
+      "description": "",
+      "language": "GDScript",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/DeckBuildRoguelike",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2024-04-27"
+    },
+    {
+      "name": "UI",
+      "description": "",
+      "language": "C#",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/UI",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2022-07-26"
+    },
+    {
+      "name": "madcamp-week2-frontend",
+      "description": "몰입캠프 2주차 프론트엔드",
+      "language": "Kotlin",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/madcamp-week2-frontend",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2022-07-12"
+    },
+    {
+      "name": "31232131",
+      "description": "",
+      "language": "",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/31232131",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2022-05-15"
+    },
+    {
+      "name": "Operating-System-14",
+      "description": "",
+      "language": "C++",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/Operating-System-14",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2022-05-15"
+    },
+    {
+      "name": "OS_14",
+      "description": "",
+      "language": "",
+      "stars": 0,
+      "url": "https://github.com/hjo3736/OS_14",
+      "homepage": "",
+      "topics": [],
+      "pushedAt": "2022-05-15"
+    }
+  ]
+}

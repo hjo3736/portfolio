@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run build && npm run preview",
-    "build": "node scripts/build-client.js && node scripts/build-server.js",
+    "build": "node scripts/github-sync.js && node scripts/build-client.js && node scripts/build-server.js && node scripts/build-aws.js",
     "preview": "node scripts/preview.js",
     "test": "node --test tests/*.test.js",
     "db:generate": "drizzle-kit generate",
@@ -13,7 +13,8 @@
     "posts:import": "node scripts/posts-import.js",
     "posts:export": "node scripts/posts-export.js",
     "posts:delete": "node scripts/posts-delete.js",
-    "posts:editor": "node scripts/posts-editor.js"
+    "posts:editor": "node scripts/posts-editor.js",
+    "github:sync": "node scripts/github-sync.js"
   },
   "dependencies": {
     "react": "^19.3.0",
@@ -23,6 +24,7 @@
     "three": "^0.180.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1170.0",
     "@rolldown/binding-wasm32-wasi": "^1.2.9",
     "@vitejs/plugin-react": "^6.1.1",
     "drizzle-kit": "^0.31.10",

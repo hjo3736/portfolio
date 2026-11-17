@@ -5,5 +5,5 @@ export const projects = [
       ['인터랙션', '다면체에 연결된 프로젝트 이름에 마우스를 올리면 기간과 설명이 펼쳐지고, 선택하면 프로젝트 페이지로 이동합니다.'],
       ['기록과 대화', '주제별 글 목록과 개별 글 페이지, 비밀번호로 수정·삭제하는 댓글을 지원합니다.'],
     ],
-    tags: ['React', 'Three.js', 'Cloudflare Workers', 'D1'], href: '/', linkText: '사이트 둘러보기 ↗' },
+    tags: ['React', 'Three.js', 'AWS Lambda', 'DynamoDB'], href: '/', linkText: '사이트 둘러보기 ↗' },
 ];

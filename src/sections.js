@@ -9,7 +9,7 @@ export const content = [
     items: [
       ['인터페이스', 'React로 페이지와 댓글 화면을 구성하고, 화면 크기에 따라 레이아웃을 조정합니다.', 'React', 'JavaScript', 'CSS'],
       ['인터랙션', 'Three.js로 와이어프레임 다면체를 그립니다. 직접 돌려보거나 꼭짓점을 선택해 각 페이지를 탐색할 수 있습니다.', 'Three.js', 'WebGL'],
-      ['서버와 데이터', 'Cloudflare Worker가 댓글 요청을 처리하고 D1에 저장합니다. 댓글을 수정하거나 삭제할 때는 작성 당시 비밀번호를 확인합니다.', 'Cloudflare Workers', 'D1', 'SQLite'],
+      ['서버와 데이터', 'AWS Lambda가 댓글 요청을 처리하고 DynamoDB에 저장합니다. 페이지는 S3와 CloudFront로 전달하고, 댓글을 수정하거나 삭제할 때는 작성 당시 비밀번호를 확인합니다.', 'AWS Lambda', 'DynamoDB', 'CloudFront'],
       ['글과 빌드', '마크다운으로 작성한 글을 모아 블로그를 구성합니다. esbuild로 브라우저 화면과 서버를 빌드합니다.', 'Markdown', 'esbuild'],
     ] },
   { name: '블로그', en: 'BLOG', path: '/blog', title: '만들면서 배운 것들', copy: '개발 일지와 기술 지식, 생각의 기록.', items: [] },

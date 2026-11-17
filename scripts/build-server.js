@@ -19,7 +19,10 @@ await build({ entryPoints: ['server/worker.js'], outfile: 'dist/server/index.js'
     builder.onLoad({ filter: /.*/, namespace: 'data' }, args => ({ contents: `export default ${JSON.stringify(args.path === 'virtual:server-assets' ? assets : loadPostsFromStore(path.resolve('content/posts.db')).map(post => post.slug))}`, loader: 'js' }));
   } }],
 });
-fs.mkdirSync('dist/.openai', { recursive: true });
-fs.copyFileSync('.openai/hosting.json', 'dist/.openai/hosting.json');
-fs.cpSync('drizzle', 'dist/.openai/drizzle', { recursive: true });
+// 이전 배포 경로(OpenAI Sites) 연결 정보. git에서 뺐으므로 이 PC처럼 파일이 있을 때만 dist/에 넣는다 — GitHub Actions(AWS 배포)에는 없다.
+if (fs.existsSync('.openai/hosting.json')) {
+  fs.mkdirSync('dist/.openai', { recursive: true });
+  fs.copyFileSync('.openai/hosting.json', 'dist/.openai/hosting.json');
+  fs.cpSync('drizzle', 'dist/.openai/drizzle', { recursive: true });
+}
 console.log('Worker and comment database migrations are ready.');

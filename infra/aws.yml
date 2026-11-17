@@ -1,0 +1,244 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  현재진행형 포트폴리오 — S3 + CloudFront(정적 페이지), Lambda 함수 URL + DynamoDB(댓글 API),
+  GitHub Actions 배포 역할(OIDC). 사용법은 infra/README.md.
+
+Parameters:
+  DomainNames:
+    Type: CommaDelimitedList
+    Default: ''
+    Description: CloudFront에 붙일 도메인(예 hyeonjaeoh.com,www.hyeonjaeoh.com). CertificateArn과 함께 준다. 비우면 *.cloudfront.net 주소만 쓴다.
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: us-east-1 리전 ACM 인증서 ARN. DomainNames의 모든 이름을 덮어야 한다.
+  OriginSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 32
+    Description: CloudFront가 Lambda에 붙여 보내는 비밀 값(x-origin-verify). 함수 URL 직접 호출을 막는다. openssl rand -hex 32 등으로 만든다.
+  GitHubRepo:
+    Type: String
+    Default: hjo3736/portfolio
+    Description: 배포 역할을 맡길 GitHub 저장소(owner/name). main 브랜치만 역할을 쓸 수 있다.
+  CreateGitHubOidcProvider:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: 이 계정에 token.actions.githubusercontent.com OIDC 공급자가 이미 있으면 false.
+
+Conditions:
+  HasDomain: !Not [!Equals [!Ref CertificateArn, '']]
+  CreateOidc: !Equals [!Ref CreateGitHubOidcProvider, 'true']
+
+Resources:
+  # ---------- 정적 페이지 ----------
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration: { BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true }
+      OwnershipControls: { Rules: [{ ObjectOwnership: BucketOwnerEnforced }] }
+      BucketEncryption: { ServerSideEncryptionConfiguration: [{ ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 } }] }
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub '${SiteBucket.Arn}/*'
+            Condition: { StringEquals: { 'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}' } }
+
+  SiteOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig: { Name: !Sub '${AWS::StackName}-site', OriginAccessControlOriginType: s3, SigningBehavior: always, SigningProtocol: sigv4 }
+
+  # 배포마다 GitHub Actions가 .aws-build/router.js(페이지 목록 + 404 본문)로 덮어쓴다. 이 코드는 첫 배포 전 자리표시다.
+  RouterFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub '${AWS::StackName}-router'
+      AutoPublish: true
+      FunctionConfig: { Comment: 'page routes (replaced on deploy)', Runtime: cloudfront-js-2.0 }
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request, uri = request.uri;
+          if (uri.endsWith('/')) request.uri = uri + 'index.html';
+          else if (!/\.[a-z0-9]+$/i.test(uri)) request.uri = uri + '/index.html';
+          return request;
+        }
+
+  # 댓글 API 앞단: 방문자 호스트와 IP를 Lambda가 읽을 이름으로 옮긴다(방문자가 보낸 같은 이름 헤더는 덮어쓴다).
+  ApiHeadersFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub '${AWS::StackName}-api-headers'
+      AutoPublish: true
+      FunctionConfig: { Comment: 'forward viewer host and ip to comments API', Runtime: cloudfront-js-2.0 }
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          request.headers['x-site-host'] = { value: request.headers.host ? request.headers.host.value : '' };
+          request.headers['x-viewer-ip'] = { value: event.viewer.ip };
+          return request;
+        }
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub '${AWS::StackName} portfolio'
+        HttpVersion: http2and3
+        PriceClass: PriceClass_200
+        DefaultRootObject: index.html
+        Aliases: !If [HasDomain, !Ref DomainNames, !Ref AWS::NoValue]
+        ViewerCertificate: !If
+          - HasDomain
+          - { AcmCertificateArn: !Ref CertificateArn, SslSupportMethod: sni-only, MinimumProtocolVersion: TLSv1.2_2021 }
+          - { CloudFrontDefaultCertificate: true }
+        Origins:
+          - Id: site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt SiteOriginAccessControl.Id
+            S3OriginConfig: { OriginAccessIdentity: '' }
+          - Id: api
+            DomainName: !Select [2, !Split ['/', !GetAtt ApiFunctionUrl.FunctionUrl]]
+            CustomOriginConfig: { OriginProtocolPolicy: https-only, OriginSSLProtocols: [TLSv1.2] }
+            OriginCustomHeaders: [{ HeaderName: x-origin-verify, HeaderValue: !Ref OriginSecret }]
+        DefaultCacheBehavior:
+          TargetOriginId: site
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods: [GET, HEAD]
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6          # Managed-CachingOptimized (오리진 Cache-Control을 따른다)
+          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03 # Managed-SecurityHeadersPolicy
+          FunctionAssociations: [{ EventType: viewer-request, FunctionARN: !GetAtt RouterFunction.FunctionMetadata.FunctionARN }]
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad          # Managed-CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac  # Managed-AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03
+            FunctionAssociations: [{ EventType: viewer-request, FunctionARN: !GetAtt ApiHeadersFunction.FunctionMetadata.FunctionARN }]
+
+  # ---------- 댓글 API ----------
+  CommentsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: [{ AttributeName: post_slug, AttributeType: S }, { AttributeName: id, AttributeType: S }, { AttributeName: sort, AttributeType: S }]
+      KeySchema: [{ AttributeName: post_slug, KeyType: HASH }, { AttributeName: id, KeyType: RANGE }]
+      LocalSecondaryIndexes:
+        - IndexName: by_created
+          KeySchema: [{ AttributeName: post_slug, KeyType: HASH }, { AttributeName: sort, KeyType: RANGE }]
+          Projection: { ProjectionType: ALL }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+
+  LimitsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: [{ AttributeName: key, AttributeType: S }]
+      KeySchema: [{ AttributeName: key, KeyType: HASH }]
+      TimeToLiveSpecification: { AttributeName: ttl, Enabled: true }
+
+  ApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement: [{ Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: sts:AssumeRole }]
+      ManagedPolicyArns: [arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]
+      Policies:
+        - PolicyName: comments-tables
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem, dynamodb:Query]
+                Resource: [!GetAtt CommentsTable.Arn, !Sub '${CommentsTable.Arn}/index/*', !GetAtt LimitsTable.Arn]
+
+  # 코드는 배포마다 GitHub Actions가 .aws-build/lambda/index.mjs로 덮어쓴다. 아래는 첫 배포 전 자리표시다.
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-comments'
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Handler: index.handler
+      MemorySize: 512   # PBKDF2 10만 회 — CPU가 메모리에 비례한다
+      Timeout: 10
+      Role: !GetAtt ApiRole.Arn
+      Environment:
+        Variables: { COMMENTS_TABLE: !Ref CommentsTable, LIMITS_TABLE: !Ref LimitsTable, ORIGIN_SECRET: !Ref OriginSecret }
+      Code:
+        ZipFile: |
+          exports.handler = async () => ({ statusCode: 503, headers: { 'content-type': 'application/json; charset=utf-8' }, body: '{"error":"댓글 API가 아직 배포되지 않았습니다."}' });
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: { LogGroupName: !Sub '/aws/lambda/${ApiFunction}', RetentionInDays: 30 }
+
+  ApiFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties: { TargetFunctionArn: !GetAtt ApiFunction.Arn, AuthType: NONE }
+
+  # AuthType NONE 함수 URL은 InvokeFunctionUrl과 (함수 URL 경유로 한정한) InvokeFunction 둘 다 필요하다. 접근 통제는 x-origin-verify가 한다.
+  ApiUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties: { FunctionName: !Ref ApiFunction, Action: lambda:InvokeFunctionUrl, Principal: '*', FunctionUrlAuthType: NONE }
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties: { FunctionName: !Ref ApiFunction, Action: lambda:InvokeFunction, Principal: '*', InvokedViaFunctionUrl: true }
+
+  # ---------- GitHub Actions 배포 역할 ----------
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOidc
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+      ThumbprintList: [6938fd4d98bab03faadb97b34396831e3780aea1]
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If [CreateOidc, !Ref GitHubOidcProvider, !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com']
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals: { 'token.actions.githubusercontent.com:aud': sts.amazonaws.com }
+              StringLike: { 'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubRepo}:ref:refs/heads/main' }
+      Policies:
+        - PolicyName: deploy-site
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - { Effect: Allow, Action: s3:ListBucket, Resource: !GetAtt SiteBucket.Arn }
+              - { Effect: Allow, Action: [s3:GetObject, s3:PutObject, s3:DeleteObject], Resource: !Sub '${SiteBucket.Arn}/*' }
+              - { Effect: Allow, Action: [lambda:UpdateFunctionCode, lambda:GetFunction], Resource: !GetAtt ApiFunction.Arn }
+              - { Effect: Allow, Action: [cloudfront:DescribeFunction, cloudfront:UpdateFunction, cloudfront:PublishFunction], Resource: !GetAtt RouterFunction.FunctionARN }
+              - { Effect: Allow, Action: [cloudfront:CreateInvalidation, cloudfront:GetInvalidation], Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}' }
+
+Outputs:
+  SiteBucket: { Value: !Ref SiteBucket, Description: 'GitHub 변수 AWS_SITE_BUCKET' }
+  DistributionId: { Value: !Ref Distribution, Description: 'GitHub 변수 AWS_DISTRIBUTION_ID' }
+  DistributionDomain: { Value: !GetAtt Distribution.DomainName, Description: 'DNS가 가리킬 곳(CNAME/ALIAS)' }
+  ApiFunctionName: { Value: !Ref ApiFunction, Description: 'GitHub 변수 AWS_API_FUNCTION' }
+  RouterFunctionName: { Value: !Sub '${AWS::StackName}-router', Description: 'GitHub 변수 AWS_ROUTER_FUNCTION' }
+  DeployRoleArn: { Value: !GetAtt DeployRole.Arn, Description: 'GitHub 변수 AWS_ROLE_ARN' }
